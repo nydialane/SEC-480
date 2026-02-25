@@ -108,8 +108,7 @@ function select-vm([string] $folder)
 
 function cloner([string] $config_path)
 {
-    Clear-Host
-    480banner
+
     Write-Host "Config Path: $config_path"
 
     

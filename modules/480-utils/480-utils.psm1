@@ -277,3 +277,184 @@ Write-Host "Using snapshot '$user_snapshot'" -ForegroundColor Green
     }
     
 }
+
+
+
+# function for creating new virtual switch and portgroup
+
+function New-Network([string]$defaultEsxi){
+
+        $vcenterServer = Read-Host "Enter vCenter server [$defaultEsxi]"
+    if ([string]::IsNullOrWhiteSpace($vcenterServer)) {
+        $vcenterServer = $defaultEsxi
+    }
+
+    # connect to vCenter 
+    try {
+        480connect -server $vcenterServer
+    }
+    catch {
+        Write-Host "Failed to connect to vCenter '$vcenterServer': $($_.Exception.Message)" -ForegroundColor Red
+        return
+    }
+
+
+
+        # get ESXi host name
+        $vmhost = Read-Host "Enter ESXi host name [$defaultEsxi]"
+        if([string]::IsNullOrWhiteSpace($vmhost)){
+            $vmhost = $defaultEsxi
+        }
+
+             $vcenterServer = Read-Host "Enter vCenter server [$defaultEsxi]"
+    if ([string]::IsNullOrWhiteSpace($vcenterServer)) {
+        $vcenterServer = $defaultEsxi
+    }
+         # make sure ESXi host exists
+    $esxiObj = Get-VMHost -Name $vmhost -ErrorAction SilentlyContinue
+    if (-not $esxiObj) {
+        Write-Host "ESXi host '$vmhost' not found in vCenter." -ForegroundColor Red
+        return
+    }
+
+        # Attempt to retrieve the host object
+        # if host is invalid then -ErrorAction Stop forces the catch block 
+        $hostObj = Get-VMHost -Name $vmhost -ErrorAction Stop
+
+
+        # get virtual switch name
+        $vswitchName = Read-Host "Enter name for new Virtual Switch"
+        if ([string]::IsNullOrWhiteSpace($vswitchName)){
+            Write-Host "Cannot be empty" -ForegroundColor DarkRed
+        }
+
+        # see if switch already exists
+        $existingSwitch = Get-VirtualSwitch -VMHost $hostObj -Name $vswitchName -ErrorAction SilentlyContinue
+
+        if ($null -ne $existingSwitch) {
+            # message if switch already exists
+            Write-Host "Virtual Switch '$vswitchName' already exists." -ForegroundColor Yellow
+        }
+        else {
+            # make new virtual switch
+            New-VirtualSwitch -VMHost $hostObj -Name $vswitchName -ErrorAction Stop
+            Write-Host "Virtual Switch '$vswitchName' created successfully." -ForegroundColor Green
+        }
+
+
+        # get portgroup name
+        $portgroupName = Read-Host "Enter name for new Portgroup"
+
+        # see if portgroup already exists
+        $existingPG = Get-VirtualPortGroup -VMHost $hostObj -Name $portgroupName -ErrorAction SilentlyContinue
+
+        if ($null -ne $existingPG) {
+            # Portgroup already exists
+            Write-Host "Portgroup '$portgroupName' already exists." -ForegroundColor Cyan
+        }
+        else {
+            # make new portgroup attached to the specified switch
+            New-VirtualPortGroup -VirtualSwitch $vswitchName `
+                                 -Name $portgroupName `
+                                 -VMHost $hostObj `
+                                 -ErrorAction Stop
+
+            Write-Host "Portgroup '$portgroupName' created successfully." -ForegroundColor Green
+        }
+
+        # end message
+        Write-Host "Network configuration complete." -ForegroundColor Green
+    }
+
+    catch {
+        # catches any errors (invalid host, creation failure, and more)
+        Write-Host "An error occurred while creating network components." -ForegroundColor DarkRed
+        Write-Host $_.Exception.Message -ForegroundColor DarkRed
+    }
+}
+
+
+
+# function for getting the IP and MAC address for the first interface of a named VM
+function Get-IP {
+
+    param (
+        [string]$configPath
+    )
+    Connect-480VIServer -configPath $configPath
+
+   Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting process for retrieval of  IP and MAC Address"
+    
+       try {
+
+        # get all VMs and sort by name
+        $vms = Get-VM | Sort-Object Name
+
+        if ($null -eq $vms -or $vms.Count -eq 0) {
+            Write-Host "No VMs found." -ForegroundColor DarkRed
+            return
+        }
+
+        # show list of VMs with numbers
+        Write-Host ""
+        for ($i = 0; $i -lt $vms.Count; $i++) {
+            Write-Host "[$($i + 1)] $($vms[$i].Name)"
+        }
+
+        Write-Host ""
+
+        # get VM via  number
+        $selection = Read-Host "Select a VM by number"
+
+        # make sure input is good
+        if (-not ($selection -as [int])) {
+            Write-Host "Invalid selection. Must be a number." -ForegroundColor DarkRed
+            return
+        }
+
+        $index = [int]$selection - 1
+
+        if ($index -lt 0 -or $index -ge $vms.Count) {
+            Write-Host "Selection out of range." -ForegroundColor DarkRed
+            return
+        }
+
+        # get the proper VM
+        $vm = $vms[$index]
+
+        # get first network adapter from the VM
+        $adapter = Get-NetworkAdapter -VM $vm -ErrorAction Stop | Select-Object -First 1
+
+        # make sure adapter actually exists
+        if ($null -eq $adapter) {
+            Write-Host "No network adapters found on VM." -ForegroundColor DarkRed
+            return
+        }
+
+        # keep the MAC address
+        $mac = $adapter.MacAddress
+
+
+        # get IP addresses - could grab more than one
+        # take only the first
+        $ip = $vm.Guest.IPAddress | Select-Object -First 1
+
+        # alert if no IP found 
+        if ($null -eq $ip) {
+            $ip = "No IP Address Found"
+        }
+
+
+        # display results
+        Write-Host "---------------"
+        Write-Host "VM Name: $vmName" -ForegroundColor Green
+        Write-Host "MAC Address: $mac"
+        Write-Host "IP Address: $ip"
+    }
+
+    catch {
+        # catches any errors (invalid host, creation failure, and more)
+        Write-Host "An error occurred while getting VM network info." -ForegroundColor DarkRed
+        Write-Host $_.Exception.Message -ForegroundColor DarkRed
+    }
+}

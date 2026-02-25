@@ -24,16 +24,22 @@ function choosing(){
         
         Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting VM cloning process..."
         cloner -config_path $configPath
-        $valid = $true 
+        
         }
 
     elseif ($choice -eq 2){
-
+        
         $valid = $true
+
+        New-Network -defaultEsxi $config.esxi_host
     }
 
     elseif ($choice -eq 3){
+
         $valid = $true
+
+        Get-IP -configPath $configpath
+
     }
     else {
     Write-Host -ForegroundColor DarkRed "Please give valid input [1-3]"

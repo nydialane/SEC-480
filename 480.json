@@ -1,0 +1,8 @@
+{
+    "vcenter_server" : "vcenter.nydia.local",
+    "vm_folder" : "BASE VMs",
+    "esxi_host" :"192.168.3.213",
+    "default_network" : "480-Internal",
+    "default_datastore" : "datastore2",
+    "default_snapshot" : "Base"
+}

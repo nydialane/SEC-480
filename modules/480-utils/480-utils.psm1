@@ -282,106 +282,100 @@ Write-Host "Using snapshot '$user_snapshot'" -ForegroundColor Green
 
 # function for creating new virtual switch and portgroup
 
-function New-Network([string]$defaultEsxi){
+  function New-Network([string] $config_path) 
+    {
 
-        $vcenterServer = Read-Host "Enter vCenter server [$defaultEsxi]"
-    if ([string]::IsNullOrWhiteSpace($vcenterServer)) {
-        $vcenterServer = $defaultEsxi
-    }
-
-    # connect to vCenter 
-    try {
-        480connect -server $vcenterServer
-    }
-    catch {
-        Write-Host "Failed to connect to vCenter '$vcenterServer': $($_.Exception.Message)" -ForegroundColor Red
-        return
-    }
+        $config = Get-Content -Raw -Path $config_path -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        $esxi = $config.esxi_host
 
 
+        # ESXi host
+        do {
+            $vmhost = Read-Host "Enter ESXi host [$esxi]"
+            if ([string]::IsNullOrWhiteSpace($vmhost)) {
+                $vmhost = $esxi
+            }
 
-        # get ESXi host name
-        $vmhost = Read-Host "Enter ESXi host name [$defaultEsxi]"
-        if([string]::IsNullOrWhiteSpace($vmhost)){
-            $vmhost = $defaultEsxi
-        }
+            # make sure host exists
+            $esxiObj = Get-VMHost -Name $vmhost -ErrorAction SilentlyContinue
+            if (-not $esxiObj) {
+                Write-Host "ESXi host '$vmhost' not found in vCenter. Please enter a valid host." -ForegroundColor DarkRed
+            }
 
-             $vcenterServer = Read-Host "Enter vCenter server [$defaultEsxi]"
-    if ([string]::IsNullOrWhiteSpace($vcenterServer)) {
-        $vcenterServer = $defaultEsxi
-    }
-         # make sure ESXi host exists
-    $esxiObj = Get-VMHost -Name $vmhost -ErrorAction SilentlyContinue
-    if (-not $esxiObj) {
-        Write-Host "ESXi host '$vmhost' not found in vCenter." -ForegroundColor Red
-        return
-    }
+        } while (-not $esxiObj)
 
-        # Attempt to retrieve the host object
-        # if host is invalid then -ErrorAction Stop forces the catch block 
-        $hostObj = Get-VMHost -Name $vmhost -ErrorAction Stop
+        # virtual switch
+        
+        
+        
+        function switchname(){
+            $goodswitch = $false
+        do{
+            $vswitchName = Read-Host "Enter name for new Virtual Switch"
 
-
-        # get virtual switch name
-        $vswitchName = Read-Host "Enter name for new Virtual Switch"
-        if ([string]::IsNullOrWhiteSpace($vswitchName)){
-            Write-Host "Cannot be empty" -ForegroundColor DarkRed
-        }
-
+            if ([string]::IsNullOrWhiteSpace($vswitchName)) {
+            Write-Host "Virtual Switch name cannot be empty." -ForegroundColor DarkRed
+             $goodswitch = $false
+             }
+            else { 
         # see if switch already exists
-        $existingSwitch = Get-VirtualSwitch -VMHost $hostObj -Name $vswitchName -ErrorAction SilentlyContinue
-
-        if ($null -ne $existingSwitch) {
-            # message if switch already exists
+        $existingSwitch = Get-VirtualSwitch -VMHost $esxiObj -Name $vswitchName -ErrorAction SilentlyContinue
+        if ($existingSwitch) {
             Write-Host "Virtual Switch '$vswitchName' already exists." -ForegroundColor Yellow
-        }
-        else {
-            # make new virtual switch
-            New-VirtualSwitch -VMHost $hostObj -Name $vswitchName -ErrorAction Stop
+        } else {
+            $newSwitch = New-VirtualSwitch -Name $vswitchName -VMHost $esxiObj -ErrorAction Stop
             Write-Host "Virtual Switch '$vswitchName' created successfully." -ForegroundColor Green
+            $goodswitch = $true
+            return $newSwitch
         }
+        }
+        }while ($goodswitch -eq $false)
+    }
+    $vswitchName = switchname
+    function portgroup([string] $vswitchName)
+        {
+        # portgroup
+         $goodport = $false
+        do{
+            Write-Host "vSwitch $vswitchName"
+            $portgroupName = Read-Host "Enter name for new Portgroup"
 
-
-        # get portgroup name
-        $portgroupName = Read-Host "Enter name for new Portgroup"
-
-        # see if portgroup already exists
-        $existingPG = Get-VirtualPortGroup -VMHost $hostObj -Name $portgroupName -ErrorAction SilentlyContinue
-
-        if ($null -ne $existingPG) {
-            # Portgroup already exists
-            Write-Host "Portgroup '$portgroupName' already exists." -ForegroundColor Cyan
+        if ([string]::IsNullOrWhiteSpace($portgroupName)) {
+            Write-Host "Portgroup name cannot be empty." -ForegroundColor DarkRed
+        $goodport = $false
         }
         else {
-            # make new portgroup attached to the specified switch
-            New-VirtualPortGroup -VirtualSwitch $vswitchName `
-                                 -Name $portgroupName `
-                                 -VMHost $hostObj `
-                                 -ErrorAction Stop
-
+        # see if portgroup exists
+        $existingPG = Get-VirtualPortGroup -VMHost $esxiObj -Name $portgroupName -ErrorAction SilentlyContinue
+        if ($existingPG) {
+            Write-Host "Portgroup '$portgroupName' already exists." -ForegroundColor Cyan
+        } 
+        else {
+            
+            New-VirtualPortGroup -Name $portgroupName -VirtualSwitch $vswitchName -ErrorAction Stop
             Write-Host "Portgroup '$portgroupName' created successfully." -ForegroundColor Green
+            Write-Host "Network configuration complete." -ForegroundColor Green
+            $goodport = $true
         }
 
-        # end message
-        Write-Host "Network configuration complete." -ForegroundColor Green
+            }
+        }while ($goodport -eq $false)
     }
 
-    catch {
-        # catches any errors (invalid host, creation failure, and more)
+    portgroup -vswitchname $vswitchName
+    }catch{
         Write-Host "An error occurred while creating network components." -ForegroundColor DarkRed
         Write-Host $_.Exception.Message -ForegroundColor DarkRed
     }
-}
+
+
 
 
 
 # function for getting the IP and MAC address for the first interface of a named VM
 function Get-IP {
 
-    param (
-        [string]$configPath
-    )
-    Connect-480VIServer -configPath $configPath
+    
 
    Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting process for retrieval of  IP and MAC Address"
     

@@ -7,6 +7,23 @@ $configpath = "/home/nydia/SEC-480/SEC-480/480.json"
 Clear-Host
 480banner
 
+function serverconnect() {
+do {
+    $hello = Read-Host "Would you like to connect to nydia's server? [y/n]"
+    $valid = $false
+    if ($hello -eq 'y'){
+        480connect -server vcenter.nydia.local
+        $valid = $true
+    }
+    elseif ($hello -eq 'n'){
+        $awesome = Read-Host "Enter server you would like to connect to:"
+        480connect -server $awesome
+        $valid = $true
+    } 
+} while ($valid -eq $false)
+}
+serverconnect
+
 Write-Host -ForegroundColor DarkMagenta "
 [1] Clone VM
 [2] New Virtual Switch and/or Portgroup
@@ -31,14 +48,14 @@ function choosing(){
         
         $valid = $true
 
-        New-Network -defaultEsxi $config.esxi_host
+        New-Network -config_path $configPath
     }
 
     elseif ($choice -eq 3){
 
         $valid = $true
 
-        Get-IP -configPath $configpath
+        Get-IP 
 
     }
     else {

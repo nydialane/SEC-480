@@ -30,6 +30,7 @@ Write-Host -ForegroundColor DarkMagenta "
 [3] Get IP & MAC address of first interface
 [4] Turn on VM
 [5] Turn off VM
+[6] Set VM network adapter
 "
 
 
@@ -72,6 +73,13 @@ function choosing(){
         $valid = $true
 
         KillVM
+
+    }
+    elseif ($choice -eq 6){
+
+        $valid = $true
+
+        Set-Network
 
     }
     else {

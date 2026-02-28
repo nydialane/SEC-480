@@ -452,7 +452,7 @@ function Get-IP {
     }
 }
 
-
+# function for turning off VM
 function KillVM {
 
     $vms = Get-VM
@@ -500,7 +500,7 @@ function KillVM {
         return
     }
 }
-
+# function for turning on VM
 function AliveVM {
 
     $vms = Get-VM
@@ -541,3 +541,96 @@ function AliveVM {
     }
 }
 
+function Set-Network {
+
+    # get all VMs
+    $vms = Get-VM
+
+    # error handle if no VMs
+    if (-not $vms) {
+        Write-Host "No VMs found in vCenter." -ForegroundColor DarkRed
+        return
+    }
+
+    # lists all VMs to be chose from
+    Write-Host "Available VMs:" -ForegroundColor Cyan
+    for ($i = 0; $i -lt $vms.Count; $i++) {
+        Write-Host "[$($i+1)] $($vms[$i].Name)"
+    }
+
+   
+    $selection = Read-Host "Select a VM by number"
+
+        # Try to cast to integer safely
+    try {
+    $index = [int]$selection
+    }   
+    catch {
+    Write-Host "Invalid selection. Must be a number." -ForegroundColor DarkRed
+    return
+    }
+
+    # Validate range
+    if ($index -lt 1 -or $index -gt $vms.Count) {
+    Write-Host "Invalid VM selection. Number out of range." -ForegroundColor DarkRed
+    return
+    }
+
+
+
+    $vm = $vms[$selection - 1]
+
+    # get all network adapters on the selected VM 
+    $adapters = Get-NetworkAdapter -VM $vm -ErrorAction SilentlyContinue
+
+    if (-not $adapters -or $adapters.Count -eq 0) {
+        Write-Host "No network adapters found on VM '$($vm.Name)'." -ForegroundColor DarkRed
+        return
+    }
+
+    # show all available networks
+    $networks = Get-VirtualNetwork
+
+    if (-not $networks -or $networks.Count -eq 0) {
+        Write-Host "No networks found in vCenter." -ForegroundColor DarkRed
+        return
+    }
+
+    Write-Host "Available Networks:" -ForegroundColor Cyan
+    for ($j = 0; $j -lt $networks.Count; $j++) {
+        Write-Host "[$($j+1)] $($networks[$j].Name)"
+    }
+
+    # goes through each adapter and lets you set network
+    foreach ($adapter in $adapters) {
+
+        Write-Host "Adapter '$($adapter.Name)' on VM '$($vm.Name)'" -ForegroundColor Cyan
+
+        # get user to pick network
+        $netSelection = Read-Host "Select network number to assign to this adapter"
+
+        # validate network selection
+        if (-not ($netSelection -as [int]) -or $netSelection -lt 1 -or $netSelection -gt $networks.Count) {
+            Write-Host "Invalid network selection. Skipping adapter '$($adapter.Name)'." -ForegroundColor DarkRed
+            continue
+        }
+
+        $selectedNetwork = $networks[$netSelection - 1]
+
+        # attempt to set the network (with runtime error handling)
+        try {
+            Set-NetworkAdapter `
+                -NetworkAdapter $adapter `
+                -NetworkName $selectedNetwork.Name `
+                -Confirm:$false -ErrorAction Stop
+
+            Write-Host "Adapter '$($adapter.Name)' successfully set to network '$($selectedNetwork.Name)'." -ForegroundColor DarkGreen
+        }
+        catch {
+            Write-Host "Failed to set adapter '$($adapter.Name)' to network '$($selectedNetwork.Name)'." -ForegroundColor DarkRed
+            Write-Host $_.Exception.Message -ForegroundColor DarkRed
+        }
+    }
+
+    Write-Host "Network assignment process complete for VM '$($vm.Name)'." -ForegroundColor DarkGreen -BackgroundColor DarkBlue
+}

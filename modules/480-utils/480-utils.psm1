@@ -371,9 +371,6 @@ Write-Host "Using snapshot '$user_snapshot'" -ForegroundColor Green
     }
     }
 
-
-
-
 # function for getting the IP and MAC address for the first interface of a named VM
 function Get-IP {
 
@@ -454,3 +451,49 @@ function Get-IP {
         Write-Host $_.Exception.Message -ForegroundColor DarkRed
     }
 }
+
+
+function BootVM {
+
+    $goodVM = $false
+    do {
+    $vms = Get-VM
+
+    # error handling for server having no VMs
+
+    if (-not $vms) {
+        Write-Host "No VMs found." -ForegroundColor DarkRed
+        $goodVM = $false
+    }
+
+    Write-Host "Available VMs:" -ForegroundColor Cyan
+    # spits out list of VMs
+    for ($i = 0; $i -lt $vms.Count; $i++) {
+        Write-Host "[$($i+1)] $($vms[$i].Name) - $($vms[$i].PowerState)"
+    }
+
+    $selection = Read-Host "Select VM you would like to start" 
+
+    if (-not ($selection -as [int]) -or 
+        $selection -lt 1 -or 
+        $selection -gt $vms.Count) {
+
+        Write-Host "Invalid selection." -ForegroundColor DarkRed
+        $goodVM = $false
+    }
+
+    $vm = $vms[$selection - 1]
+
+    if ($vm.PowerState -eq "PoweredOn") {
+        Write-Host "VM '$($vm.Name)' is already powered on." -ForegroundColor Yellow
+        $goodVM = $false
+    }
+    else {
+        Start-VM -VM $vm -Confirm:$false
+        Write-Host "VM '$($vm.Name)' started successfully." -ForegroundColor Green
+        $goodVM = $true
+    }
+}while ($goodVM -eq $false)
+}
+
+

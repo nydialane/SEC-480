@@ -28,6 +28,7 @@ Write-Host -ForegroundColor DarkMagenta "
 [1] Clone VM
 [2] New Virtual Switch and/or Portgroup
 [3] Get IP & MAC address of first interface
+[4] Turn on VM
 "
 
 
@@ -56,6 +57,13 @@ function choosing(){
         $valid = $true
 
         Get-IP 
+
+    }
+    elseif ($choice -eq 4){
+
+        $valid = $true
+
+        BootVM
 
     }
     else {

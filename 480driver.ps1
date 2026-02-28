@@ -37,7 +37,7 @@ Write-Host -ForegroundColor DarkMagenta "
 function choosing(){
     $valid = $false
     do{
-        $choice = Read-Host "What would you like to do?[1-3]"
+        $choice = Read-Host "What would you like to do?[1-6]"
 
     if ($choice -eq 1){
         $valid = $true
@@ -50,40 +50,40 @@ function choosing(){
     elseif ($choice -eq 2){
         
         $valid = $true
-
+        Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting New Virtual Switch and/or Portgroup process..."
         New-Network -config_path $configPath
     }
 
     elseif ($choice -eq 3){
 
         $valid = $true
-
+        Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting get IP & MAC process..."
         Get-IP 
 
     }
     elseif ($choice -eq 4){
 
         $valid = $true
-
+        Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting VM poweron process..."
         AliveVM
 
     }
     elseif ($choice -eq 5){
 
         $valid = $true
-
+    Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting VM poweroff process..."
         KillVM
 
     }
     elseif ($choice -eq 6){
 
         $valid = $true
-
+        Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting set VM network adapter process..."
         Set-Network
 
     }
     else {
-    Write-Host -ForegroundColor DarkRed "Please give valid input [1-5]"
+    Write-Host -ForegroundColor DarkRed "Please give valid input [1-6]"
 
     }
     

@@ -285,6 +285,8 @@ Write-Host "Using snapshot '$user_snapshot'" -ForegroundColor Green
   function New-Network([string] $config_path) 
     {
 
+        try {
+
         $config = Get-Content -Raw -Path $config_path -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
         $esxi = $config.esxi_host
 
@@ -367,7 +369,7 @@ Write-Host "Using snapshot '$user_snapshot'" -ForegroundColor Green
         Write-Host "An error occurred while creating network components." -ForegroundColor DarkRed
         Write-Host $_.Exception.Message -ForegroundColor DarkRed
     }
-
+    }
 
 
 

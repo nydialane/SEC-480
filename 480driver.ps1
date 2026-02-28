@@ -29,6 +29,7 @@ Write-Host -ForegroundColor DarkMagenta "
 [2] New Virtual Switch and/or Portgroup
 [3] Get IP & MAC address of first interface
 [4] Turn on VM
+[5] Turn off VM
 "
 
 
@@ -63,11 +64,18 @@ function choosing(){
 
         $valid = $true
 
-        BootVM
+        AliveVM
+
+    }
+    elseif ($choice -eq 5){
+
+        $valid = $true
+
+        KillVM
 
     }
     else {
-    Write-Host -ForegroundColor DarkRed "Please give valid input [1-3]"
+    Write-Host -ForegroundColor DarkRed "Please give valid input [1-5]"
 
     }
     

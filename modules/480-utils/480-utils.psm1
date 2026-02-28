@@ -453,17 +453,63 @@ function Get-IP {
 }
 
 
-function BootVM {
+function KillVM {
 
-    $goodVM = $false
-    do {
+    $vms = Get-VM
+
+    if (-not $vms) {
+        Write-Host "No VMs found." -ForegroundColor DarkRed
+        return
+    }
+
+    Write-Host "Available VMs:" -ForegroundColor Cyan
+
+    for ($i = 0; $i -lt $vms.Count; $i++) {
+        Write-Host "[$($i+1)] $($vms[$i].Name) - $($vms[$i].PowerState)"
+    }
+
+    $selection = Read-Host "Select VM to poweroff"
+
+    if (-not ($selection -as [int]) -or 
+        $selection -lt 1 -or 
+        $selection -gt $vms.Count) {
+
+        Write-Host "Invalid selection." -ForegroundColor DarkRed
+        continue
+    }
+
+    $vm = $vms[$selection - 1]
+
+    if ($vm.PowerState -eq "PoweredOff") {
+        Write-Host "VM '$($vm.Name)' is already powered off." -ForegroundColor Yellow
+        return
+    }
+    else {
+        Stop-VM -VM $vm -Confirm:$false
+        Write-Host "VM '$($vm.Name)' stopped successfully." -ForegroundColor Green
+        Write-Host -ForegroundColor Black -BackgroundColor Red "
+        
+    
+                ⣴⣾⣿⣿⣿⣿⣷⣦ 
+                ⣿⣿⣿⣿⣿⣿⣿⣿           
+                ⡟⠛⠽⣿⣿⠯⠛⢻            
+                ⣧⣀⣀⡾⢷⣀⣀⣼           
+                 ⡏⢽⢴⡦⡯⢹                
+                 ⠙⢮⣙⣋⡵⠋               
+        "
+        return
+    }
+}
+
+function AliveVM {
+
     $vms = Get-VM
 
     # error handling for server having no VMs
 
     if (-not $vms) {
         Write-Host "No VMs found." -ForegroundColor DarkRed
-        $goodVM = $false
+        return
     }
 
     Write-Host "Available VMs:" -ForegroundColor Cyan
@@ -479,21 +525,19 @@ function BootVM {
         $selection -gt $vms.Count) {
 
         Write-Host "Invalid selection." -ForegroundColor DarkRed
-        $goodVM = $false
+        continue
     }
 
     $vm = $vms[$selection - 1]
 
     if ($vm.PowerState -eq "PoweredOn") {
         Write-Host "VM '$($vm.Name)' is already powered on." -ForegroundColor Yellow
-        $goodVM = $false
+        return
     }
     else {
         Start-VM -VM $vm -Confirm:$false
         Write-Host "VM '$($vm.Name)' started successfully." -ForegroundColor Green
-        $goodVM = $true
+        return
     }
-}while ($goodVM -eq $false)
 }
-
 

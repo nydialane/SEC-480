@@ -373,10 +373,6 @@ Write-Host "Using snapshot '$user_snapshot'" -ForegroundColor Green
 
 # function for getting the IP and MAC address for the first interface of a named VM
 function Get-IP {
-
-    
-
-   Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting process for retrieval of  IP and MAC Address"
     
        try {
 

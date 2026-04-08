@@ -1,13 +1,14 @@
-all:
+vyos:
   hosts:
-    vyos:
-      ansible_host: 10.0.17.200
-      ansible_user: vyos
-      ansible_password: vyos
-      ansible_network_os: vyos
-      ansible_connection: network_cli
+    10.0.17.200:
+      hostname: fw-blue7-luc
       lan_ip: 10.0.5.2
       lan: 10.0.5.0/24
+      dhcp_name_server: 10.0.5.5
       network_name: blue13-LAN
       domain_name: blue13.local
-      dhcp_name_server: 10.0.5.5
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_connection: network_cli
+    ansible_network_os: vyos
+    ansible_user: vyos

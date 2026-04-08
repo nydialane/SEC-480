@@ -1,6 +1,14 @@
-- name: vyos blue10 net config
+
+- name: vyos blue13 net config
   hosts: vyos
   tasks:
+  - name: Vyos version Info
+    vyos_command:
+      commands: show version
+    register: version
+  - debug:
+      var: version.stdout_lines
+
   - name: configure vyos dhcp
     vyos_config:
       save: yes

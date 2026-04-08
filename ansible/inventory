@@ -1,8 +1,0 @@
-[vyos]
-vyos1 ansible_host=10.0.17.101
-
-[vyos:vars]
-ansible_user=vyos
-ansible_password=Ch@mpl@1n!25
-ansible_connection=network_cli
-ansible_network_os=vyos.vyos.vyos

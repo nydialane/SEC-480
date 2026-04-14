@@ -1,0 +1,51 @@
+---
+- name: Deploy ADDS to dc-blue1
+  hosts: servers
+  gather_facts: no
+
+  vars_prompt:
+    - name: admin_password
+      prompt: "Enter local Administrator password"
+      private: yes
+
+  tasks:
+
+    - name: Set local Administrator password
+      win_user:
+        name: Administrator
+        password: "{{ admin_password }}"
+        state: present
+
+    - name: Set hostname to dc-blue1
+      ansible.windows.win_hostname:
+        name: dc-blue1
+      register: hostname_result
+
+    - name: Reboot after hostname change
+      win_reboot:
+      when: hostname_result.reboot_required
+
+    - name: Create new AD forest BLUE1.local
+      microsoft.ad.domain:
+        dns_domain_name: BLUE1.local
+        safe_mode_password: "{{ admin_password }}"
+      register: domain_install
+
+    - name: Reboot after domain creation and wait for DNS
+      win_reboot:
+        test_command: 'exit (Get-Service -Name DNS).Status -ne "Running"'
+      when: domain_install.reboot_required
+
+    - name: Add DNS forwarder to blue13-fw
+      win_shell: Add-DnsServerForwarder -IPAddress 10.0.5.2
+
+    - name: Create OU structure
+      win_shell: |
+        Import-Module ActiveDirectory
+        $base = "DC=BLUE1,DC=LOCAL"
+        New-ADOrganizationalUnit -Name "BLUE1" -Path $base -ErrorAction SilentlyContinue
+        New-ADOrganizationalUnit -Name "Accounts" -Path "OU=BLUE1,$base" -ErrorAction SilentlyContinue
+        New-ADOrganizationalUnit -Name "Groups" -Path "OU=Accounts,OU=BLUE1,$base" -ErrorAction SilentlyContinue
+        New-ADOrganizationalUnit -Name "Computers" -Path "OU=BLUE1,$base" -ErrorAction SilentlyContinue
+        New-ADOrganizationalUnit -Name "Servers" -Path "OU=Computers,OU=BLUE1,$base" -ErrorAction SilentlyContinue
+        New-ADOrganizationalUnit -Name "Workstations" -Path "OU=Computers,OU=BLUE1,$base" -ErrorAction SilentlyContinue

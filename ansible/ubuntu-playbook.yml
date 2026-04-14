@@ -1,0 +1,64 @@
+---
+- name: ubuntu config
+  hosts: all
+  tasks:
+  - name: Create the .ssh directory
+    file:
+      path: "/home/{{ ansible_user }}/.ssh"
+      state: directory
+      mode: 0700
+
+  - name: Create authorized_keys file
+    file:
+      path: "/home/{{ ansible_user }}/.ssh/authorized_keys"
+      state: touch
+      mode: 0644
+
+  - name: Copy key block and add to authorized_keys
+    blockinfile:
+      dest: "/home/{{ ansible_user }}/.ssh/authorized_keys"
+      block: "{{ public_key }}"
+
+  - name: Set the hostname
+    hostname:
+      name: "{{ hostname }}"
+    become: yes
+
+  - name: Add host to file
+    lineinfile:
+      path: /etc/hosts
+      line: '127.0.1.1 {{ hostname }}'
+    become: yes
+
+  - name: Remove old netplan file
+    file:
+      path: "/etc/netplan/00-installer-config.yaml"
+      state: absent
+    become: yes
+
+  - name: Create a new netplan config
+    copy:
+      dest: "/etc/netplan/01-netcfg.yaml"
+      content: |
+        network:
+          version: 2
+          ethernets:
+            {{ device }}:
+              dhcp4: no 
+              addresses:
+                - {{ lan_ip }}/24
+              routes:
+                - to: default
+                  via: {{ gateway }}
+              nameservers:
+                addresses:
+                  - {{ name_server }}
+                  - {{ gateway }}
+      mode: 0600
+    become: yes
+
+  - name: Bounce the box
+    shell: "sleep 5 && shutdown -r"
+    become: yes
+    async: 1
+    poll: 0

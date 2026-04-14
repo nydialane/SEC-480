@@ -2,7 +2,7 @@
 - name: vyos blue13 net config
   hosts: vyos
   tasks:
-  - name: Vyos version Info
+  - name: vyos version info
     vyos_command:
       commands: show version
     register: version
@@ -14,10 +14,10 @@
       save: yes
       lines:
         - set service dhcp-server global-parameters 'local-address {{ lan_ip }};'
-        - set service dhcp-server shared-network-name {{ network_name }} authoritative
-        - set service dhcp-server shared-network-name {{ network_name }} subnet {{ lan }} default-router '{{ lan_ip }}'
-        - set service dhcp-server shared-network-name {{ network_name }} subnet {{ lan }} name-server '{{ dhcp_name_server }}'
-        - set service dhcp-server shared-network-name {{ network_name }} subnet {{ lan }} domain-name '{{ domain_name }}'
-        - set service dhcp-server shared-network-name {{ network_name }} subnet {{ lan }} lease '86400'
-        - set service dhcp-server shared-network-name {{ network_name }} subnet {{ lan }} range {{ network_name }}-POOL start '10.0.5.50'
-        - set service dhcp-server shared-network-name {{ network_name }} subnet {{ lan }} range {{ network_name }}-POOL stop '10.0.5.100'
+        - set service dhcp-server shared-network-name {{ shared_network }} authoritative
+        - set service dhcp-server shared-network-name {{ shared_network }} subnet {{ lan }} default-router '{{ lan_ip }}'
+        - set service dhcp-server shared-network-name {{ shared_network }} subnet {{ lan }} name-server '{{ dhcp_name_server }}'
+        - set service dhcp-server shared-network-name {{ shared_network }} subnet {{ lan }} domain-name '{{ dhcp_domain }}'
+        - set service dhcp-server shared-network-name {{ shared_network }} subnet {{ lan }} lease '86400'
+        - set service dhcp-server shared-network-name {{ shared_network }} subnet {{ lan }} range {{ shared_network }}-POOL start '10.0.5.75'
+        - set service dhcp-server shared-network-name {{ shared_network }} subnet {{ lan }} range {{ shared_network }}-POOL stop '10.0.5.150'

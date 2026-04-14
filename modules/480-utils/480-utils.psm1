@@ -516,13 +516,13 @@ function AliveVM {
 
     $selection = Read-Host "Select VM you would like to start" 
 
-    if (-not ($selection -as [int]) -or 
-        $selection -lt 1 -or 
-        $selection -gt $vms.Count) {
+ #   if (-not ($selection -as [int]) -or 
+ #       $selection -lt 1 -or 
+  #      $selection -gt $vms.Count) {
 
-        Write-Host "Invalid selection." -ForegroundColor DarkRed
-        continue
-    }
+   #     Write-Host "Invalid selection." -ForegroundColor DarkRed
+  #      continue
+   # }
 
     $vm = $vms[$selection - 1]
 
@@ -629,4 +629,68 @@ function Set-Network {
     }
 
     Write-Host "Network assignment process complete for VM '$($vm.Name)'." -ForegroundColor DarkGreen -BackgroundColor DarkBlue
+}
+
+function Set-WindowsIP {
+    try {
+        # get all VMs and sort by name
+        $vms = Get-VM | Sort-Object Name
+
+        if ($null -eq $vms -or $vms.Count -eq 0) {
+            Write-Host "No VMs found." -ForegroundColor DarkRed
+            return
+        }
+
+        # show list of VMs with numbers
+        Write-Host ""
+        for ($i = 0; $i -lt $vms.Count; $i++) {
+            Write-Host "[$($i + 1)] $($vms[$i].Name)"
+        }
+        Write-Host ""
+
+        # get VM selection
+        $selection = Read-Host "Select VM by number"
+        if (-not ($selection -as [int])) {
+            Write-Host "Invalid selection. Must be a number." -ForegroundColor DarkRed
+            return
+        }
+
+        $index = [int]$selection - 1
+        if ($index -lt 0 -or $index -ge $vms.Count) {
+            Write-Host "Selection out of range." -ForegroundColor DarkRed
+            return
+        }
+
+        $vm = $vms[$index]
+        Write-Host "Using VM: $($vm.Name)" -ForegroundColor Green
+
+        # get guest credentials
+        $guestUser = Read-Host "Enter Windows guest username"
+        $guestPass = Read-Host "Enter Windows guest password" -AsSecureString
+        $guestCred = New-Object System.Management.Automation.PSCredential($guestUser, $guestPass)
+
+        # get network details
+        $interface = Read-Host "Enter interface name (e.g. Ethernet0)"
+        $ip = Read-Host "Enter IP address"
+        $mask = Read-Host "Enter subnet mask"
+        $gateway = Read-Host "Enter gateway"
+        $dns1 = Read-Host "Enter primary DNS"
+        $dns2 = Read-Host "Enter secondary DNS (optional)"
+
+        # build netsh commands
+        $script = "netsh interface ipv4 set address `"$interface`" static $ip $mask $gateway"
+        $script += "`r`nnetsh interface ipv4 set dns `"$interface`" static $dns1"
+        if ($dns2 -and $dns2 -ne "") {
+            $script += "`r`nnetsh interface ipv4 add dns `"$interface`" $dns2 index=2"
+        }
+
+        # run script inside VM
+        Invoke-VMScript -VM $vm -ScriptText $script -GuestCredential $guestCred -ScriptType Powershell -ErrorAction Stop
+
+        Write-Host "Static IP set successfully on $($vm.Name)!" -ForegroundColor Green
+        Write-Host -ForegroundColor Black -BackgroundColor Green "CONFIG COMPLETE"
+    }
+    catch {
+        Write-Host "Error setting static IP: $($_.Exception.Message)" -ForegroundColor DarkRed
+    }
 }

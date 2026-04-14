@@ -1,10 +1,9 @@
 
 # import module
-import-module "/home/nydia/SEC-480/modules/480-utils/480-utils.psm1" -force
+import-module "/home/champuser/SEC-480/modules/480-utils/480-utils.psm1" -force
 #path to json file
-$configpath = "/home/nydia/SEC-480/480.json"
+$configpath = "/home/champuser/SEC-480/480.json"
 
-Clear-Host
 480banner
 
 function serverconnect() {
@@ -31,6 +30,7 @@ Write-Host -ForegroundColor DarkMagenta "
 [4] Turn on VM
 [5] Turn off VM
 [6] Set VM network adapter
+[7] Set static IP
 "
 
 
@@ -82,6 +82,11 @@ function choosing(){
         Set-Network
 
     }
+    elseif ($choice -eq 7){
+    $valid = $true
+    Write-Host -BackgroundColor Green -ForegroundColor Blue "Starting set Windows static IP process..."
+    Set-WindowsIP
+}
     else {
     Write-Host -ForegroundColor DarkRed "Please give valid input [1-6]"
 

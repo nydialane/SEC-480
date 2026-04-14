@@ -1,0 +1,25 @@
+linux:
+  hosts:
+  children:
+    rocky:
+      hosts:
+        10.0.5.77:
+          hostname: rocky-1
+          lan_ip: 10.0.5.10
+        10.0.5.76:
+          hostname: rocky-2
+          lan_ip: 10.0.5.11
+        10.0.5.75:
+          hostname: rocky-3
+          lan_ip: 10.0.5.12
+      vars:
+        device: ens34
+
+  vars:
+    public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACACUqaoru3nf0PjnTVq7i28dToKsoJ2EnMThEdQVq1uKAy+e1QkkiFJx06fMhx3lmxc8p4OmNWrc5/XxHL0y5u3sLPimM7DmCa/GiBWEia9LQruD774jUDjcSq1VCcutopV2XfMSmRIvyqUKggA8uRBJHJPg+Hz5VW5kNndvN8b3nvt2bnCIz2Kl4/5DLofDleNwwJkCSG7NxCMGCtmEQktdFpT/RBrMloBMWefaGDl+T3CkXVnwsdaSkL+hTW2COsEW2Fe7gHPGWrYAH0bNwnM0MRojfiBo5xJ0iE8xsiMvSjiVFZBUs0u+KehiNRido9GT3lCLbguToT8W/pbc1/X67iIMcysriGm7+eRi+Y8bcmWcQNim/aeBiUos+wxIO07AT1H8HQNVZT5mWA5M6v2z1+9Rin/tPH6TvC5EyrJq6LTYjT+p8MZ71XAjROjzcy9GjJtXKqxMlpuKV0H81xjtrKqk2SLcaa4BRiRXs6Xl0F4WkMG0vMX79PITnT9kfRDDI8MKlH6LNdJFW/PW8FzukfFARrdM2KDL1W5cuY7ji2Pr76olokYYHvDtUw/Zt9dNLe6IOloq+q7+bhVQ8eyCrM+V1Zsm/rcdtTBdnV7Pt1XyWASfEowGwWPkuAZ/y+FKRjeJnmazFXuYtIVgjIOMybCzvk915V1+wphtsZo/9 champuser@mgmt02-nydia"
+    ansible_user: deployer
+    prefix: 24
+    gateway: 10.0.5.2
+    name_server: 10.0.5.5
+    domain: blue13.local
+  
